@@ -41,8 +41,8 @@ Since bare RN has no Expo config plugin, we must document/manualize:
   - `expo.modules.liveupdates.channelName`
   - `expo.modules.scheme` (optional, for deep links)
 - AndroidManifest registration:
-  - `FirebaseService` (`com.google.firebase.MESSAGING_EVENT`)
-  - `NotificationDismissedReceiver`
+  - `NotificationDismissedReceiver` (required)
+  - `FirebaseService` (`com.google.firebase.MESSAGING_EVENT`, optional if FCM is configured)
 - app-level permissions:
   - `android.permission.POST_NOTIFICATIONS`
   - `android.permission.POST_PROMOTED_NOTIFICATIONS`
@@ -81,4 +81,3 @@ Since bare RN has no Expo config plugin, we must document/manualize:
   - React Native bridge module
   - manifest/setup documentation
   - event emitter plumbing
-

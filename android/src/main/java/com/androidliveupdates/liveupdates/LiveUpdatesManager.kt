@@ -251,7 +251,7 @@ class LiveUpdatesManager(private val context: Context) {
           ?: run {
             Log.w(
               TAG,
-              "deepLinkUrl property ignored. Add expo.modules.scheme meta-data in AndroidManifest.xml to enable Live Update deep links.",
+              "deepLinkUrl property ignored. Please configure withChannelConfig plugin with scheme in app.config.ts to enable managing Live Update deeplinks.",
             )
           }
       }

@@ -47,3 +47,7 @@ export type NotificationStateChangeEvent = {
   action: 'dismissed' | 'updated' | 'started' | 'stopped' | 'clicked';
   timestamp: number;
 };
+
+export type NotificationStateChangeListener = (
+  event: NotificationStateChangeEvent
+) => void;

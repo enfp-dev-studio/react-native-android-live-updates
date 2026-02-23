@@ -4,7 +4,7 @@ import {
   type EventSubscription,
 } from 'react-native';
 
-import AndroidLiveUpdates from './NativeAndroidLiveUpdates';
+import ExpoLiveUpdatesModule from './ExpoLiveUpdatesModule';
 import type {
   LiveUpdateConfig,
   LiveUpdateState,
@@ -12,7 +12,7 @@ import type {
   TokenChangeEvent,
 } from './types';
 
-const eventEmitter = new NativeEventEmitter(AndroidLiveUpdates as never);
+const eventEmitter = new NativeEventEmitter(ExpoLiveUpdatesModule as never);
 
 type Voidable<T> = T | void;
 
@@ -33,7 +33,7 @@ export function startLiveUpdate(
   if (!assertAndroid('startLiveUpdate')) {
     return;
   }
-  const notificationId = AndroidLiveUpdates.startLiveUpdate(state, config);
+  const notificationId = ExpoLiveUpdatesModule.startLiveUpdate(state, config);
   return notificationId > 0 ? notificationId : undefined;
 }
 
@@ -41,7 +41,7 @@ export function stopLiveUpdate(notificationId: number): void {
   if (!assertAndroid('stopLiveUpdate')) {
     return;
   }
-  AndroidLiveUpdates.stopLiveUpdate(notificationId);
+  ExpoLiveUpdatesModule.stopLiveUpdate(notificationId);
 }
 
 export function updateLiveUpdate(
@@ -52,7 +52,7 @@ export function updateLiveUpdate(
   if (!assertAndroid('updateLiveUpdate')) {
     return;
   }
-  AndroidLiveUpdates.updateLiveUpdate(notificationId, state, config);
+  ExpoLiveUpdatesModule.updateLiveUpdate(notificationId, state, config);
 }
 
 export function addTokenChangeListener(
@@ -84,6 +84,7 @@ export type {
   LiveUpdateProgressPoint,
   LiveUpdateProgressSegment,
   LiveUpdateState,
+  NotificationStateChangeListener,
   NotificationStateChangeEvent,
   TokenChangeEvent,
 } from './types';

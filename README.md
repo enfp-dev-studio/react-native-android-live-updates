@@ -75,6 +75,27 @@ Add metadata inside your `<application>` tag:
   android:value="your-app-scheme" />
 ```
 
+Register receiver inside your `<application>` tag:
+
+```xml
+<receiver
+  android:name="com.androidliveupdates.liveupdates.NotificationDismissedReceiver"
+  android:enabled="true"
+  android:exported="false" />
+```
+
+If you use Firebase Cloud Messaging, also register service:
+
+```xml
+<service
+  android:name="com.androidliveupdates.liveupdates.FirebaseService"
+  android:exported="false">
+  <intent-filter>
+    <action android:name="com.google.firebase.MESSAGING_EVENT" />
+  </intent-filter>
+</service>
+```
+
 If you use deep links, add a matching `VIEW` intent filter for your activity.
 
 ## Platform

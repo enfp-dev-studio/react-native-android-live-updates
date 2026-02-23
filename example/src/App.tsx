@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import {
   Button,
+  PermissionsAndroid,
   Platform,
   SafeAreaView,
   ScrollView,
@@ -19,8 +20,40 @@ import {
 export default function App() {
   const [notificationId, setNotificationId] = useState<number | undefined>();
   const [events, setEvents] = useState<string[]>([]);
+  const [hasNotificationPermission, setHasNotificationPermission] = useState(
+    Platform.OS !== 'android' ||
+      (typeof Platform.Version === 'number' && Platform.Version < 33)
+  );
+
+  const requestNotificationPermission = async (): Promise<boolean> => {
+    if (Platform.OS !== 'android') {
+      return true;
+    }
+    if (typeof Platform.Version === 'number' && Platform.Version < 33) {
+      return true;
+    }
+
+    const result = await PermissionsAndroid.request(
+      PermissionsAndroid.PERMISSIONS.POST_NOTIFICATIONS,
+      {
+        title: 'Notification Permission',
+        message:
+          'Live Updates requires notification permission to show and update notifications.',
+        buttonPositive: 'Allow',
+        buttonNegative: 'Deny',
+      }
+    );
+
+    const granted = result === PermissionsAndroid.RESULTS.GRANTED;
+    setHasNotificationPermission(granted);
+    return granted;
+  };
 
   useEffect(() => {
+    requestNotificationPermission().catch(() => {
+      setHasNotificationPermission(false);
+    });
+
     const tokenSub = addTokenChangeListener((event) => {
       setEvents((previous) =>
         [`token: ${event.token}`, ...previous].slice(0, 20)
@@ -41,7 +74,15 @@ export default function App() {
     };
   }, []);
 
-  const start = () => {
+  const start = async () => {
+    const granted = await requestNotificationPermission();
+    if (!granted) {
+      setEvents((previous) =>
+        ['notification permission denied', ...previous].slice(0, 20)
+      );
+      return;
+    }
+
     const id = startLiveUpdate(
       {
         title: 'Ride in progress',
@@ -53,7 +94,15 @@ export default function App() {
     setNotificationId(typeof id === 'number' ? id : undefined);
   };
 
-  const update = () => {
+  const update = async () => {
+    const granted = await requestNotificationPermission();
+    if (!granted) {
+      setEvents((previous) =>
+        ['notification permission denied', ...previous].slice(0, 20)
+      );
+      return;
+    }
+
     if (!notificationId) {
       return;
     }
@@ -79,9 +128,17 @@ export default function App() {
         <Text style={styles.title}>Android Live Updates Example</Text>
         <Text style={styles.subtitle}>Platform: {Platform.OS}</Text>
         <Text style={styles.subtitle}>
+          Notification permission:{' '}
+          {hasNotificationPermission ? 'granted' : 'not granted'}
+        </Text>
+        <Text style={styles.subtitle}>
           Active notificationId: {notificationId ?? 'none'}
         </Text>
         <View style={styles.buttons}>
+          <Button
+            title="Request Notification Permission"
+            onPress={requestNotificationPermission}
+          />
           <Button title="Start Live Update" onPress={start} />
           <Button title="Update Live Update" onPress={update} />
           <Button title="Stop Live Update" onPress={stop} />
