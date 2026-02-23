@@ -1,0 +1,47 @@
+package com.androidliveupdates.liveupdates
+
+import android.Manifest
+import android.content.Context
+import android.content.pm.PackageManager
+import android.os.Build
+import android.util.Log
+import androidx.core.content.ContextCompat
+
+private const val CHANNEL_ID_KEY = "expo.modules.liveupdates.channelId"
+private const val CHANNEL_NAME_KEY = "expo.modules.liveupdates.channelName"
+private const val EXPO_MODULE_SCHEME_KEY = "expo.modules.scheme"
+private const val TAG = "ManifestHelpers"
+
+private fun getMetadataFromManifest(context: Context, key: String): String? {
+  val packageManager = context.packageManager
+  val packageInfo =
+    packageManager.getApplicationInfo(context.packageName, PackageManager.GET_META_DATA)
+  return packageInfo.metaData?.getString(key)
+}
+
+private fun getRequiredMetadataFromManifest(context: Context, key: String): String {
+  return getMetadataFromManifest(context, key)
+    ?: run {
+      Log.w(TAG, "Failed to read $key from manifest.")
+      throw RuntimeException(
+        "AndroidLiveUpdates: $key is required. Add it to AndroidManifest.xml meta-data."
+      )
+    }
+}
+
+fun getChannelId(context: Context): String {
+  return getRequiredMetadataFromManifest(context, CHANNEL_ID_KEY)
+}
+
+fun getChannelName(context: Context): String {
+  return getRequiredMetadataFromManifest(context, CHANNEL_NAME_KEY)
+}
+
+fun getScheme(context: Context): String? {
+  return getMetadataFromManifest(context, EXPO_MODULE_SCHEME_KEY)
+}
+
+fun Context.checkPostNotificationPermission() =
+  Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU ||
+    ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS) ==
+      PackageManager.PERMISSION_GRANTED

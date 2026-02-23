@@ -23,12 +23,14 @@ buildscript {
     classpath "com.android.tools.build:gradle:8.7.2"
     // noinspection DifferentKotlinGradleVersion
     classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:${getExtOrDefault('kotlinVersion')}"
+    classpath "org.jetbrains.kotlin:kotlin-serialization:${getExtOrDefault('kotlinVersion')}"
   }
 }
 
 
 apply plugin: "com.android.library"
 apply plugin: "kotlin-android"
+apply plugin: "org.jetbrains.kotlin.plugin.serialization"
 
 apply plugin: "com.facebook.react"
 
@@ -64,4 +66,8 @@ android {
 
 dependencies {
   implementation "com.facebook.react:react-android"
+  implementation "androidx.core:core-ktx:1.17.0"
+  implementation platform("com.google.firebase:firebase-bom:34.3.0")
+  implementation "com.google.firebase:firebase-messaging"
+  implementation "org.jetbrains.kotlinx:kotlinx-serialization-json:1.9.0"
 }

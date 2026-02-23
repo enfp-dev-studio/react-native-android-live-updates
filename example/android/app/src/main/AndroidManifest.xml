@@ -1,6 +1,8 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
     <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <uses-permission android:name="android.permission.POST_PROMOTED_NOTIFICATIONS" />
 
     <application
       android:name=".MainApplication"
@@ -11,6 +13,15 @@
       android:theme="@style/AppTheme"
       android:usesCleartextTraffic="${usesCleartextTraffic}"
       android:supportsRtl="true">
+      <meta-data
+        android:name="expo.modules.liveupdates.channelId"
+        android:value="LiveUpdatesServiceChannelId" />
+      <meta-data
+        android:name="expo.modules.liveupdates.channelName"
+        android:value="Live Updates Service Channel Name" />
+      <meta-data
+        android:name="expo.modules.scheme"
+        android:value="androidliveupdates-example" />
       <activity
         android:name=".MainActivity"
         android:label="@string/app_name"
@@ -21,6 +32,12 @@
         <intent-filter>
             <action android:name="android.intent.action.MAIN" />
             <category android:name="android.intent.category.LAUNCHER" />
+        </intent-filter>
+        <intent-filter>
+            <action android:name="android.intent.action.VIEW" />
+            <category android:name="android.intent.category.DEFAULT" />
+            <category android:name="android.intent.category.BROWSABLE" />
+            <data android:scheme="androidliveupdates-example" />
         </intent-filter>
       </activity>
     </application>
