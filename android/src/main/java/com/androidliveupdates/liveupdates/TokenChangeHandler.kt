@@ -15,10 +15,19 @@ object TokenChangeHandler {
       field = value
       Log.i(TAG, "Token change handler setEvent added")
 
-      lastReceivedToken?.let(::sendTokenChangeEvent)
-        ?: FirebaseMessaging.getInstance().token.addOnCompleteListener { task ->
-          if (task.result != null) sendTokenChangeEvent(task.result)
+      lastReceivedToken?.let(::sendTokenChangeEvent) ?: run {
+        try {
+          FirebaseMessaging.getInstance().token.addOnCompleteListener { task ->
+            if (task.result != null) sendTokenChangeEvent(task.result)
+          }
+        } catch (e: IllegalStateException) {
+          Log.w(
+            TAG,
+            "Firebase is not initialized. Token listener will stay inactive until Firebase is configured.",
+            e,
+          )
         }
+      }
     }
 
   private fun sendTokenChangeEvent(token: String) {

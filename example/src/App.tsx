@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react';
 import {
+  Alert,
   Button,
+  Linking,
   PermissionsAndroid,
   Platform,
   SafeAreaView,
@@ -25,6 +27,26 @@ export default function App() {
       (typeof Platform.Version === 'number' && Platform.Version < 33)
   );
 
+  const isBaklava =
+    Platform.OS === 'android' &&
+    typeof Platform.Version === 'number' &&
+    Platform.Version >= 36;
+
+  const checkNotificationPermission = async (): Promise<boolean> => {
+    if (Platform.OS !== 'android') {
+      return true;
+    }
+    if (typeof Platform.Version === 'number' && Platform.Version < 33) {
+      return true;
+    }
+
+    const granted = await PermissionsAndroid.check(
+      PermissionsAndroid.PERMISSIONS.POST_NOTIFICATIONS
+    );
+    setHasNotificationPermission(granted);
+    return granted;
+  };
+
   const requestNotificationPermission = async (): Promise<boolean> => {
     if (Platform.OS !== 'android') {
       return true;
@@ -33,20 +55,27 @@ export default function App() {
       return true;
     }
 
-    const result = await PermissionsAndroid.request(
+    const granted = await PermissionsAndroid.request(
       PermissionsAndroid.PERMISSIONS.POST_NOTIFICATIONS,
       {
-        title: 'Notification Permission',
-        message:
-          'Live Updates requires notification permission to show and update notifications.',
-        buttonPositive: 'Allow',
-        buttonNegative: 'Deny',
+        title: 'Notifications Permission',
+        message: 'This example needs access to notifications.',
+        buttonNeutral: 'Ask Me Later',
+        buttonNegative: 'Cancel',
+        buttonPositive: 'OK',
       }
     );
+    const isGranted = granted === PermissionsAndroid.RESULTS.GRANTED;
+    setHasNotificationPermission(isGranted);
+    return isGranted;
+  };
 
-    const granted = result === PermissionsAndroid.RESULTS.GRANTED;
-    setHasNotificationPermission(granted);
-    return granted;
+  const openNotificationSettings = async () => {
+    try {
+      await Linking.openSettings();
+    } catch {
+      Alert.alert('Unable to open settings');
+    }
   };
 
   useEffect(() => {
@@ -74,44 +103,80 @@ export default function App() {
     };
   }, []);
 
-  const start = async () => {
-    const granted = await requestNotificationPermission();
-    if (!granted) {
+  const ensureNotificationPermission = async (): Promise<boolean> => {
+    const current = await checkNotificationPermission();
+    if (current) {
+      return true;
+    }
+
+    const requested = await requestNotificationPermission();
+    if (!requested) {
       setEvents((previous) =>
         ['notification permission denied', ...previous].slice(0, 20)
       );
+    }
+    return requested;
+  };
+
+  const start = async () => {
+    const notificationsGranted = await ensureNotificationPermission();
+    if (!notificationsGranted) {
       return;
     }
 
-    const id = startLiveUpdate(
-      {
-        title: 'Ride in progress',
-        text: 'Heading to destination',
-        progress: { max: 100, progress: 15 },
-      },
-      { deepLinkUrl: '/trip/123' }
-    );
-    setNotificationId(typeof id === 'number' ? id : undefined);
+    try {
+      const id = startLiveUpdate(
+        {
+          title: 'Ride in progress',
+          text: 'Heading to destination',
+          progress: { max: 100, progress: 15 },
+        },
+        { deepLinkUrl: '/trip/123' }
+      );
+
+      if (typeof id === 'number') {
+        setNotificationId(id);
+      } else {
+        setNotificationId(undefined);
+        setEvents((previous) =>
+          [
+            'start failed: notification was not posted (check app/channel notification settings)',
+            ...previous,
+          ].slice(0, 20)
+        );
+      }
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : 'unknown start error';
+      setEvents((previous) =>
+        [`start error: ${message}`, ...previous].slice(0, 20)
+      );
+    }
   };
 
   const update = async () => {
-    const granted = await requestNotificationPermission();
-    if (!granted) {
-      setEvents((previous) =>
-        ['notification permission denied', ...previous].slice(0, 20)
-      );
+    const notificationsGranted = await ensureNotificationPermission();
+    if (!notificationsGranted) {
       return;
     }
 
     if (!notificationId) {
       return;
     }
-    updateLiveUpdate(notificationId, {
-      title: 'Ride in progress',
-      text: 'Almost there',
-      progress: { max: 100, progress: 85 },
-      shortCriticalText: 'ETA',
-    });
+    try {
+      updateLiveUpdate(notificationId, {
+        title: 'Ride in progress',
+        text: 'Almost there',
+        progress: { max: 100, progress: 85 },
+        shortCriticalText: 'ETA',
+      });
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : 'unknown update error';
+      setEvents((previous) =>
+        [`update error: ${message}`, ...previous].slice(0, 20)
+      );
+    }
   };
 
   const stop = () => {
@@ -126,11 +191,18 @@ export default function App() {
     <SafeAreaView style={styles.container}>
       <ScrollView contentContainerStyle={styles.content}>
         <Text style={styles.title}>Android Live Updates Example</Text>
-        <Text style={styles.subtitle}>Platform: {Platform.OS}</Text>
+        <Text style={styles.subtitle}>
+          Platform: {Platform.OS} {String(Platform.Version)}
+        </Text>
         <Text style={styles.subtitle}>
           Notification permission:{' '}
           {hasNotificationPermission ? 'granted' : 'not granted'}
         </Text>
+        {isBaklava && (
+          <Text style={styles.subtitle}>
+            Promoted permission is controlled in Android notification settings.
+          </Text>
+        )}
         <Text style={styles.subtitle}>
           Active notificationId: {notificationId ?? 'none'}
         </Text>
@@ -139,6 +211,12 @@ export default function App() {
             title="Request Notification Permission"
             onPress={requestNotificationPermission}
           />
+          {isBaklava && (
+            <Button
+              title="Open Notification Settings"
+              onPress={openNotificationSettings}
+            />
+          )}
           <Button title="Start Live Update" onPress={start} />
           <Button title="Update Live Update" onPress={update} />
           <Button title="Stop Live Update" onPress={stop} />

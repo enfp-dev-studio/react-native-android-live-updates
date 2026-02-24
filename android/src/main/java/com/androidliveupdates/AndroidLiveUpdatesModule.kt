@@ -80,7 +80,6 @@ class AndroidLiveUpdatesModule(reactContext: ReactApplicationContext) :
   override fun removeListeners(count: Double) {
     listenersCount = (listenersCount - count.toInt()).coerceAtLeast(0)
     if (listenersCount == 0) {
-      NotificationStateEventEmitter.sendEvent = null
       TokenChangeHandler.sendEvent = null
     }
   }

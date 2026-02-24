@@ -24,7 +24,7 @@ private fun getRequiredMetadataFromManifest(context: Context, key: String): Stri
     ?: run {
       Log.w(TAG, "Failed to read $key from manifest.")
       throw RuntimeException(
-        "ExpoLiveUpdatesModule: $key is required. Please configure withChannelConfig plugin with ${key.split(".").last()} in app.config.ts"
+        "AndroidLiveUpdatesModule: $key is required. Add <meta-data android:name=\"$key\" android:value=\"...\"/> to the <application> block in AndroidManifest.xml"
       )
     }
 }
