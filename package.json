@@ -42,8 +42,11 @@
   },
   "keywords": [
     "react-native",
-    "ios",
-    "android"
+    "android",
+    "live-updates",
+    "notification",
+    "bare",
+    "turbomodule"
   ],
   "repository": {
     "type": "git",

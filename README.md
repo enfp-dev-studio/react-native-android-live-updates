@@ -1,6 +1,10 @@
 # react-native-android-live-updates
 
-Android Live Updates for bare React Native, migrated from expo-live-updates.
+Android [Live Updates](https://developer.android.com/develop/ui/views/notifications/live-updates) for bare React Native.
+
+This is a bare React Native port of [expo-live-updates](https://github.com/software-mansion-labs/expo-live-updates) by [Software Mansion Labs](https://github.com/software-mansion-labs). It tracks the upstream library and exposes the same API as a React Native TurboModule, so projects not using the Expo managed workflow can use Live Updates on Android 16+.
+
+> This project is not affiliated with Expo or Software Mansion. All core notification logic originates from expo-live-updates.
 
 ## Installation
 
@@ -12,11 +16,11 @@ npm install react-native-android-live-updates
 
 ```ts
 import {
+  startLiveUpdate,
+  updateLiveUpdate,
+  stopLiveUpdate,
   addNotificationStateChangeListener,
   addTokenChangeListener,
-  startLiveUpdate,
-  stopLiveUpdate,
-  updateLiveUpdate,
 } from 'react-native-android-live-updates';
 
 const notificationId = startLiveUpdate(
@@ -36,11 +40,11 @@ if (notificationId) {
   });
 }
 
-const notificationSub = addNotificationStateChangeListener(event => {
+const notificationSub = addNotificationStateChangeListener((event) => {
   console.log(event.notificationId, event.action);
 });
 
-const tokenSub = addTokenChangeListener(event => {
+const tokenSub = addTokenChangeListener((event) => {
   console.log(event.token);
 });
 
@@ -51,31 +55,35 @@ notificationSub?.remove();
 tokenSub?.remove();
 ```
 
-## Android setup (required)
+## Android Setup
 
-Add these permissions in your app `AndroidManifest.xml`:
+Add permissions to `AndroidManifest.xml`:
 
 ```xml
 <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 <uses-permission android:name="android.permission.POST_PROMOTED_NOTIFICATIONS" />
 ```
 
-Add metadata inside your `<application>` tag:
+Add metadata inside the `<application>` tag:
 
 ```xml
+<!-- Required -->
 <meta-data
   android:name="expo.modules.liveupdates.channelId"
   android:value="LiveUpdatesServiceChannelId" />
 <meta-data
   android:name="expo.modules.liveupdates.channelName"
   android:value="Live Updates Service Channel Name" />
+
 <!-- Optional: required only for deepLinkUrl support -->
 <meta-data
   android:name="expo.modules.scheme"
   android:value="your-app-scheme" />
 ```
 
-Register receiver inside your `<application>` tag:
+> The `expo.modules.*` key names are intentionally kept identical to upstream for compatibility.
+
+Register the broadcast receiver inside the `<application>` tag:
 
 ```xml
 <receiver
@@ -84,7 +92,7 @@ Register receiver inside your `<application>` tag:
   android:exported="false" />
 ```
 
-If you use Firebase Cloud Messaging, also register service:
+If you use Firebase Cloud Messaging, also register the service:
 
 ```xml
 <service
@@ -100,15 +108,13 @@ If you use deep links, add a matching `VIEW` intent filter for your activity.
 
 ## Platform
 
-- Android only.
-- iOS autolinking is disabled via `react-native.config.js`.
+Android 16 (API 36) and above. iOS autolinking is disabled via `react-native.config.js`.
 
 ## Contributing
 
-- [Development workflow](CONTRIBUTING.md#development-workflow)
-- [Sending a pull request](CONTRIBUTING.md#sending-a-pull-request)
-- [Code of conduct](CODE_OF_CONDUCT.md)
+See [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## License
 
-MIT
+MIT — see [LICENSE](LICENSE).
+Portions of this library are derived from [expo-live-updates](https://github.com/software-mansion-labs/expo-live-updates) by Software Mansion Labs.

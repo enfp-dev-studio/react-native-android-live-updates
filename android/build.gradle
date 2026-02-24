@@ -1,7 +1,7 @@
 buildscript {
   ext.AndroidLiveUpdates = [
     kotlinVersion: "2.0.21",
-    minSdkVersion: 24,
+    minSdkVersion: 36,
     compileSdkVersion: 36,
     targetSdkVersion: 36
   ]
