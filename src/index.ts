@@ -12,7 +12,9 @@ import type {
   TokenChangeEvent,
 } from './types';
 
-const eventEmitter = new NativeEventEmitter(ExpoLiveUpdatesModule as never);
+const eventEmitter = ExpoLiveUpdatesModule
+  ? new NativeEventEmitter(ExpoLiveUpdatesModule as never)
+  : null;
 
 type Voidable<T> = T | void;
 
@@ -23,6 +25,12 @@ function assertAndroid(name: string): boolean {
     console.error(`${name} is only available on Android`);
     return false;
   }
+
+  if (!ExpoLiveUpdatesModule) {
+    console.error(`${name} is not available: native module not found`);
+    return false;
+  }
+
   return true;
 }
 
@@ -30,18 +38,19 @@ export function startLiveUpdate(
   state: LiveUpdateState,
   config?: LiveUpdateConfig
 ): Voidable<number> {
-  if (!assertAndroid('startLiveUpdate')) {
-    return;
+  if (assertAndroid('startLiveUpdate')) {
+    const notificationId = ExpoLiveUpdatesModule?.startLiveUpdate(
+      state,
+      config
+    );
+    return notificationId && notificationId > 0 ? notificationId : undefined;
   }
-  const notificationId = ExpoLiveUpdatesModule.startLiveUpdate(state, config);
-  return notificationId > 0 ? notificationId : undefined;
 }
 
 export function stopLiveUpdate(notificationId: number): void {
-  if (!assertAndroid('stopLiveUpdate')) {
-    return;
+  if (assertAndroid('stopLiveUpdate')) {
+    return ExpoLiveUpdatesModule?.stopLiveUpdate(notificationId);
   }
-  ExpoLiveUpdatesModule.stopLiveUpdate(notificationId);
 }
 
 export function updateLiveUpdate(
@@ -49,32 +58,33 @@ export function updateLiveUpdate(
   state: LiveUpdateState,
   config?: LiveUpdateConfig
 ): void {
-  if (!assertAndroid('updateLiveUpdate')) {
-    return;
+  if (assertAndroid('updateLiveUpdate')) {
+    return ExpoLiveUpdatesModule?.updateLiveUpdate(
+      notificationId,
+      state,
+      config
+    );
   }
-  ExpoLiveUpdatesModule.updateLiveUpdate(notificationId, state, config);
 }
 
 export function addTokenChangeListener(
   listener: (event: TokenChangeEvent) => void
 ): Voidable<EventSubscription> {
-  if (!assertAndroid('addTokenChangeListener')) {
-    return;
+  if (assertAndroid('addTokenChangeListener')) {
+    return eventEmitter?.addListener('onTokenChange', (event) =>
+      listener(event as TokenChangeEvent)
+    );
   }
-  return eventEmitter.addListener('onTokenChange', (event) =>
-    listener(event as TokenChangeEvent)
-  );
 }
 
 export function addNotificationStateChangeListener(
   listener: (event: NotificationStateChangeEvent) => void
 ): Voidable<EventSubscription> {
-  if (!assertAndroid('addNotificationStateChangeListener')) {
-    return;
+  if (assertAndroid('addNotificationStateChangeListener')) {
+    return eventEmitter?.addListener('onNotificationStateChange', (event) =>
+      listener(event as NotificationStateChangeEvent)
+    );
   }
-  return eventEmitter.addListener('onNotificationStateChange', (event) =>
-    listener(event as NotificationStateChangeEvent)
-  );
 }
 
 export type {

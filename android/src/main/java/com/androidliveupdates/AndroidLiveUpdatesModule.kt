@@ -35,7 +35,6 @@ class AndroidLiveUpdatesModule(reactContext: ReactApplicationContext) :
 
   private val context = reactApplicationContext
   private lateinit var liveUpdatesManager: LiveUpdatesManager
-  private var listenersCount = 0
 
   init {
     reactContext.addActivityEventListener(this)
@@ -68,7 +67,7 @@ class AndroidLiveUpdatesModule(reactContext: ReactApplicationContext) :
   }
 
   override fun addListener(eventName: String) {
-    listenersCount += 1
+    ensureInitialized()
     if (eventName == LiveUpdatesModuleEvents.ON_NOTIFICATION_STATE_CHANGE) {
       NotificationStateEventEmitter.sendEvent = ::sendEvent
     }
@@ -78,10 +77,7 @@ class AndroidLiveUpdatesModule(reactContext: ReactApplicationContext) :
   }
 
   override fun removeListeners(count: Double) {
-    listenersCount = (listenersCount - count.toInt()).coerceAtLeast(0)
-    if (listenersCount == 0) {
-      TokenChangeHandler.sendEvent = null
-    }
+    // Keep native event emitters active to mirror upstream Expo module behavior.
   }
 
   override fun onNewIntent(intent: Intent) {

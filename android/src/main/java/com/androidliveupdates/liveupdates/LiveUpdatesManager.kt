@@ -2,7 +2,6 @@ package com.androidliveupdates.liveupdates
 
 import android.Manifest
 import android.app.Notification
-import android.app.NotificationManager
 import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
@@ -34,11 +33,6 @@ class LiveUpdatesManager(private val context: Context) {
 
   @RequiresPermission(Manifest.permission.POST_NOTIFICATIONS)
   fun startLiveUpdateNotification(state: LiveUpdateState, config: LiveUpdateConfig? = null): Int? {
-    if (!canPostToChannel()) {
-      Log.w(TAG, "failed to start notification - app notifications or channel are disabled")
-      return null
-    }
-
     val notificationId = idGenerator.generateNextId()
 
     if (notificationExists(notificationId)) {
@@ -61,11 +55,6 @@ class LiveUpdatesManager(private val context: Context) {
     state: LiveUpdateState,
     config: LiveUpdateConfig?,
   ) {
-    if (!canPostToChannel()) {
-      Log.w(TAG, "failed to update notification - app notifications or channel are disabled")
-      return
-    }
-
     if (!notificationExists(notificationId)) {
       Log.w(
         TAG,
@@ -96,28 +85,6 @@ class LiveUpdatesManager(private val context: Context) {
     return notificationManager.activeNotifications.any { it.id == notificationId }
   }
 
-  private fun canPostToChannel(): Boolean {
-    if (!notificationManager.areNotificationsEnabled()) {
-      Log.w(TAG, "Notifications are disabled for this app.")
-      return false
-    }
-
-    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-      val androidNotificationManager = context.getSystemService(NotificationManager::class.java)
-      val channel = androidNotificationManager?.getNotificationChannel(channelId)
-      if (channel == null) {
-        Log.w(TAG, "Notification channel '$channelId' not found.")
-        return false
-      }
-      if (channel.importance == NotificationManager.IMPORTANCE_NONE) {
-        Log.w(TAG, "Notification channel '$channelId' is disabled by user.")
-        return false
-      }
-    }
-
-    return true
-  }
-
   private fun createNotification(
     state: LiveUpdateState,
     notificationId: Int,
@@ -133,18 +100,7 @@ class LiveUpdatesManager(private val context: Context) {
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.BAKLAVA) {
       notificationBuilder.setShortCriticalText(state.shortCriticalText)
       notificationBuilder.setOngoing(true)
-      val androidNotificationManager =
-        context.getSystemService(NotificationManager::class.java)
-      val canPostPromoted = androidNotificationManager?.canPostPromotedNotifications() == true
-      if (canPostPromoted) {
-        try {
-          notificationBuilder.setRequestPromotedOngoing(true)
-        } catch (e: SecurityException) {
-          Log.w(TAG, "Promoted Live Updates permission is unavailable. Posting standard ongoing notification.", e)
-        }
-      } else {
-        Log.i(TAG, "Promoted Live Updates are not allowed by system settings. Posting standard ongoing notification.")
-      }
+      notificationBuilder.setRequestPromotedOngoing(true)
     }
 
     state.image?.let { image ->

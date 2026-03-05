@@ -26,18 +26,18 @@ Initial port commit in this repo: `6368f39` — feat: migrate expo-live-updates 
 
 | Upstream | This repo | Notes |
 |----------|-----------|-------|
-| `expo/modules/liveupdates/LiveUpdatesManager.kt` | `com/androidliveupdates/liveupdates/LiveUpdatesManager.kt` | Added `canPostToChannel()` |
 | `expo/modules/liveupdates/FirebaseService.kt` | `com/androidliveupdates/liveupdates/FirebaseService.kt` | Identical |
 | `expo/modules/liveupdates/IdGenerator.kt` | `com/androidliveupdates/liveupdates/IdGenerator.kt` | Identical |
 | `expo/modules/liveupdates/NotificationDismissedReceiver.kt` | `com/androidliveupdates/liveupdates/NotificationDismissedReceiver.kt` | Identical |
 | `expo/modules/liveupdates/NotificationStateEventEmitter.kt` | `com/androidliveupdates/liveupdates/NotificationStateEventEmitter.kt` | Identical |
+| `expo/modules/liveupdates/TokenChangeHandler.kt` | `com/androidliveupdates/liveupdates/TokenChangeHandler.kt` | Identical |
 
 ### Adapted (small changes required)
 
 | Upstream | This repo | Changes |
 |----------|-----------|---------|
 | `expo/modules/liveupdates/LiveUpdatesTypes.kt` | `com/androidliveupdates/liveupdates/LiveUpdatesTypes.kt` | Removed `expo.modules.kotlin.records.{Field,Record}`; converted to plain data classes |
-| `expo/modules/liveupdates/TokenChangeHandler.kt` | `com/androidliveupdates/liveupdates/TokenChangeHandler.kt` | Added `IllegalStateException` handling for uninitialized Firebase |
+| `expo/modules/liveupdates/LiveUpdatesManager.kt` | `com/androidliveupdates/liveupdates/LiveUpdatesManager.kt` | Deep-link warning message points to `AndroidManifest.xml` metadata instead of Expo config plugin |
 | `expo/modules/liveupdates/LiveUpdatesHelpers.kt` | `com/androidliveupdates/liveupdates/LiveUpdatesHelpers.kt` | Updated error messages to reference `AndroidManifest.xml` instead of Expo plugin config |
 
 ### Fully rewritten
@@ -59,27 +59,10 @@ Initial port commit in this repo: `6368f39` — feat: migrate expo-live-updates 
 ### 1. `AndroidLiveUpdatesModule` — `removeListeners` behaviour
 
 The upstream `ExpoLiveUpdatesModule` sets `NotificationStateEventEmitter.sendEvent` in `OnCreate`
-and never clears it. This port follows the RN TurboModule `addListener`/`removeListeners` convention,
-but **does not null out `NotificationStateEventEmitter.sendEvent` when the listener count reaches zero.**
-Only `TokenChangeHandler.sendEvent` is cleared.
+and never clears it. This port keeps the same effective behavior: `removeListeners` is a no-op for
+native emitter teardown, and emitters stay active after initialization.
 
-Without this divergence, DISMISSED/STOPPED events emitted while no JS listener is registered would be
-silently dropped.
-
-### 2. `LiveUpdatesManager` — `canPostToChannel()` added
-
-This method does not exist in upstream. It guards every notification post by checking both
-app-level notification status and per-channel status before calling `notificationManager.notify()`.
-If upstream adds equivalent logic, this method can be removed.
-
-### 3. `TokenChangeHandler` — Firebase initialisation error handling
-
-A `try/catch` for `IllegalStateException` wraps the `FirebaseMessaging.getInstance().token` call
-inside the `sendEvent` setter. This was added manually during porting because Firebase may not be
-initialised when the token listener is first attached (e.g. in projects that initialise Firebase
-lazily).
-
-### 4. `LiveUpdatesHelpers` — error messages
+### 2. `LiveUpdatesHelpers` / `LiveUpdatesManager` — error messages
 
 Upstream error messages reference the Expo config plugin (`withChannelConfig`, `app.config.ts`).
 This port changes those messages to instruct users to add `<meta-data>` entries to
@@ -89,7 +72,7 @@ This port changes those messages to instruct users to add `<meta-data>` entries 
 kept identical to upstream** to preserve compatibility with projects that may migrate between
 expo-live-updates and this library.
 
-### 5. `startLiveUpdate` return value
+### 3. `startLiveUpdate` return value
 
 Upstream JS: can return `null` directly when notification creation fails.
 This port: native returns `-1`; JS converts it to `undefined` via `notificationId > 0` check.
